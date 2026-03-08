@@ -5,62 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Generator</title>
     
-    <link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+    <!-- PWA Setup for Offline Support -->
+    <meta name="theme-color" content="#1a73e8">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Invoice%20Generator%22,%22short_name%22:%22Invoicer%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#ffffff%22,%22theme_color%22:%22#1a73e8%22}">
+
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
-        .setup-panel { max-width: 950px; margin: 0 auto 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .invoice-container { max-width: 900px; margin: auto; background: white; padding: 40px; border: 1px solid #ddd; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
+        :root {
+            --primary: #1a73e8;
+            --secondary: #003366;
+            --danger: #dc3545;
+            --success: #28a745;
+            --border: #000;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; color: #333; }
+        .setup-panel { max-width: 950px; margin: 0 auto 20px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
-        .religious-header { text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 20px; color: red; } 
+        .invoice-container { 
+            max-width: 800px; 
+            margin: 40px auto; 
+            background: white; 
+            padding: 50px; 
+            border: 1px solid #eee; 
+            display: none; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            position: relative; 
+            min-height: 1000px;
+        }
         
-        /* Estimate Small Text Top Right */
+        .religious-header { text-align: center; font-weight: bold; margin-bottom: 25px; font-size: 22px; color: #d32f2f; letter-spacing: 1px; } 
+        
         .estimate-label {
             display: none;
             position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #666;
+            top: 25px;
+            right: 25px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #777;
             text-transform: uppercase;
-            border: 1px solid #ccc;
-            padding: 2px 6px;
+            border: 1.5px solid #777;
+            padding: 4px 10px;
+            border-radius: 4px;
         }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; table-layout: fixed; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: center; vertical-align: middle; word-wrap: break-word; }
-        th { background-color: #003366; color: white; border-color: #000; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; table-layout: fixed; border: 1px solid var(--border); }
+        th, td { border: 1px solid var(--border); padding: 10px 8px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+        th { background-color: var(--secondary); color: white; text-transform: uppercase; font-size: 11px; }
         
-        .shipping-row { text-align: right; padding: 8px; border: 1px solid #000; border-top: none; font-size: 14px; display: none; }
-        .total-box { text-align: right; font-size: 20px; font-weight: bold; padding: 10px; border: 1px solid #000; border-top: none; }
-        .footer-note { margin-top: 30px; font-size: 14px; border-top: 1px dashed #ccc; padding-top: 10px; display: none; }
+        .summary-container { margin-top: -1px; width: 100%; }
+        .summary-row { display: flex; justify-content: flex-end; }
+        .summary-cell { 
+            width: 180px; 
+            border: 1px solid var(--border); 
+            border-top: none; 
+            padding: 10px; 
+            text-align: right; 
+            font-size: 14px;
+        }
+        .grand-total { font-weight: bold; font-size: 18px; background: #f8f9fa; }
 
-        .input-row { display: flex; gap: 10px; background: #eef3f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap; }
-        .input-group { display: flex; flex-direction: column; gap: 5px; }
-        label { font-weight: bold; font-size: 13px; color: #333; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        .input-row { display: flex; gap: 12px; background: #f8fbff; padding: 20px; border-radius: 8px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap; border: 1px solid #e1e8f0; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-weight: 600; font-size: 12px; color: #555; text-transform: uppercase; }
+        input { padding: 10px; border: 1px solid #ccd; border-radius: 6px; font-size: 14px; }
         
-        .radio-group { display: flex; gap: 15px; align-items: center; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        .radio-group label { cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: normal; font-size: 14px; }
+        .radio-group { display: flex; gap: 15px; align-items: center; background: #fff; padding: 8px 15px; border: 1px solid #ccd; border-radius: 6px; }
+        .radio-group label { cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: 14px; }
 
-        .edit-table input { width: 95%; border: 1px solid #ddd; padding: 4px; text-align: center; }
-        .btn-add { background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .item-list-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid #eee; background: white; }
+        .btn-add { background: var(--success); color: white; border: none; padding: 12px 28px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .action-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-        .btn-preview { background: #ff9800; color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer; font-size: 18px; flex: 1; font-weight: bold; }
-        .btn-print { background: #1a73e8; color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer; font-size: 18px; flex: 1; font-weight: bold; }
-        .btn-clear { background: #dc3545; color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .action-row { display: flex; gap: 12px; margin-top: 25px; flex-wrap: wrap; }
+        .btn-preview { background: #5c6bc0; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-size: 16px; flex: 1; font-weight: bold; }
+        .btn-print { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-size: 16px; flex: 1; font-weight: bold; }
+        .btn-clear { background: var(--danger); color: white; border: none; padding: 15px 25px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; }
         
-        #saveStatus { font-size: 12px; color: #28a745; font-weight: bold; }
+        .btn-del { background: #fee; color: #c00; border: 1px solid #fcc; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        .footer-note { margin-top: 40px; font-size: 13px; color: #333; border-top: 1px dashed #ccc; padding-top: 15px; display: none; }
 
         @media print { 
-            .setup-panel { display: none; } 
-            .invoice-container { display: block !important; border: none; padding: 0; box-shadow: none; margin: 0; } 
+            .setup-panel { display: none !important; } 
+            .invoice-container { display: block !important; border: none; padding: 0; box-shadow: none; margin: 0; width: 100%; } 
             body { background: white; padding: 0; }
         }
     </style>
@@ -69,64 +96,64 @@
 
 <div class="setup-panel">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin:0;">Generator</h2>
-        <span id="saveStatus">✔ Saved Locally</span>
+        <h2 style="margin:0; color: var(--secondary);">Invoice Engine</h2>
+        <span style="font-size: 12px; color: var(--success); font-weight: 600;">● Auto-saved Locally</span>
     </div>
     
     <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
         <div class="input-group">
-            <label>Type:</label>
+            <label>Type</label>
             <div class="radio-group">
                 <label><input type="radio" name="docType" value="invoice" checked onchange="saveAll()"> Invoice</label>
                 <label><input type="radio" name="docType" value="estimate" onchange="saveAll()"> Estimate</label>
             </div>
         </div>
-        <div class="input-group" style="flex: 1;">
-            <label>Customer Name:</label>
+        <div class="input-group" style="flex: 2; min-width: 250px;">
+            <label>Client Name</label>
             <input type="text" id="client" placeholder="Customer Name" oninput="saveAll()">
         </div>
         <div class="input-group">
-            <label>Date:</label>
+            <label>Date</label>
             <input type="date" id="invDate" oninput="saveAll()">
         </div>
     </div>
 
     <div class="input-row">
-        <div class="input-group" style="flex: 2;">
-            <label>Item</label><input type="text" id="t-desc">
+        <div class="input-group" style="flex: 3; min-width: 200px;">
+            <label>Item Description</label><input type="text" id="t-desc" placeholder="e.g. Glass Work">
         </div>
-        <div class="input-group" style="width: 50px;">
-            <label>Qty</label><input type="number" id="t-qty">
-        </div>
-        <div class="input-group" style="width: 70px;">
-            <label>Len</label><input type="number" id="t-len">
+        <div class="input-group" style="width: 60px;">
+            <label>Qty</label><input type="number" id="t-qty" value="1">
         </div>
         <div class="input-group" style="width: 70px;">
-            <label>Wid</label><input type="number" id="t-wid">
+            <label>Len</label><input type="number" id="t-len" placeholder="0">
         </div>
-        <div class="input-group" style="width: 90px;">
-            <label>Rate</label><input type="number" id="t-rate">
+        <div class="input-group" style="width: 70px;">
+            <label>Wid</label><input type="number" id="t-wid" placeholder="0">
+        </div>
+        <div class="input-group" style="width: 100px;">
+            <label>Rate</label><input type="number" id="t-rate" placeholder="0">
         </div>
         <button class="btn-add" onclick="addItem()">Add</button>
     </div>
 
-    <table class="edit-table">
-        <tbody id="editBody"></tbody>
-    </table>
+    <div id="editList" style="border: 1px solid #eee; border-radius: 8px; margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+        <!-- Items will appear here -->
+    </div>
 
-    <div style="display: flex; gap: 20px; margin-top: 20px;">
-        <div class="input-group">
-            <label>Shipping Charge:</label>
+    <div style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
+        <div class="input-group" style="width: 200px;">
+            <label>Shipping (Optional)</label>
             <input type="number" id="shippingCharge" placeholder="0" oninput="saveAll()">
         </div>
-        <div class="input-group" style="flex: 1;">
-            <label>Note:</label>
-            <input type="text" id="footerNoteInput" oninput="saveAll()">
+        <div class="input-group" style="flex: 1; min-width: 250px;">
+            <label>Note (Optional)</label>
+            <input type="text" id="footerNoteInput" placeholder="Special instructions..." oninput="saveAll()">
         </div>
     </div>
 
     <div class="action-row">
-        <button class="btn-preview" onclick="previewInvoice()">Preview</button>
+        <button class="btn-preview" onclick="previewInvoice()">Show Preview</button>
         <button class="btn-print" onclick="printInvoice()">Print PDF</button>
         <button class="btn-clear" onclick="confirmClear()">Clear All</button>
     </div>
@@ -136,33 +163,46 @@
     <div id="estimateFlag" class="estimate-label">Estimate</div>
     <div class="religious-header">।। श्री गणेशाय नम ।।</div>
     
-    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-        <div><strong>BILLED TO:</strong><br><span id="outClient"></span></div>
-        <div style="text-align: right;"><strong>DATE:</strong><br><span id="outDate"></span></div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 30px; border-bottom: 2px solid var(--secondary); padding-bottom: 10px;">
+        <div>
+            <div style="font-size: 11px; font-weight: bold; color: #666;">BILLED TO:</div>
+            <div id="outClient" style="font-size: 18px; font-weight: bold;"></div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 11px; font-weight: bold; color: #666;">DATE:</div>
+            <div id="outDate" style="font-size: 16px;"></div>
+        </div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width: 40px;">Sr.</th>
-                <th>Description</th>
-                <th style="width: 50px;">Qty</th>
-                <th style="width: 50px;">Len</th>
-                <th style="width: 50px;">Wid</th>
+                <th style="width: 30px;">Sr.</th>
+                <th style="text-align: left; padding-left: 10px;">Description</th>
+                <th style="width: 45px;">Qty</th>
+                <th style="width: 45px;">Len</th>
+                <th style="width: 45px;">Wid</th>
                 <th style="width: 80px;">S.F/R.F</th>
-                <th style="width: 80px;">Rate</th>
+                <th style="width: 70px;">Rate</th>
                 <th style="width: 100px;">Total (₹)</th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
 
-    <div id="shippingRow" class="shipping-row">
-        Shipping Charge: ₹ <span id="outShipping">0.00</span>
-    </div>
-
-    <div class="total-box">
-        GRAND TOTAL: ₹ <span id="outTotal">0.00</span>
+    <div class="summary-container">
+        <div class="summary-row">
+            <div class="summary-cell" style="border-right: none; color: #555;">Subtotal</div>
+            <div class="summary-cell" id="outSubtotal">0.00</div>
+        </div>
+        <div id="shippingRow" class="summary-row" style="display: none;">
+            <div class="summary-cell" style="border-right: none; color: #555;">Shipping Charge</div>
+            <div class="summary-cell" id="outShipping">0.00</div>
+        </div>
+        <div class="summary-row">
+            <div class="summary-cell grand-total" style="border-right: none;">GRAND TOTAL</div>
+            <div class="summary-cell grand-total" style="color: var(--secondary);">₹ <span id="outTotal">0.00</span></div>
+        </div>
     </div>
 
     <div id="noteBox" class="footer-note">
@@ -171,17 +211,13 @@
 </div>
 
 <script>
-    // --- OFFLINE SERVICE WORKER ---
+    // Offline Support (Service Worker)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'invoice-v2';
-                self.addEventListener('install', e => {
-                    e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(['./'])));
-                });
-                self.addEventListener('fetch', e => {
-                    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
-                });
+                const CACHE_NAME = 'invoice-pwa-v1';
+                self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['./']))));
+                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
             `;
             const blob = new Blob([swCode], {type: 'application/javascript'});
             navigator.serviceWorker.register(URL.createObjectURL(blob));
@@ -191,7 +227,7 @@
     let items = [];
 
     window.onload = () => {
-        const saved = localStorage.getItem('inv_data_v2');
+        const saved = localStorage.getItem('inv_data_final_v1');
         if (saved) {
             const data = JSON.parse(saved);
             document.getElementById('client').value = data.client || '';
@@ -200,9 +236,12 @@
             document.getElementById('shippingCharge').value = data.shipping || '';
             items = data.items || [];
             if (data.docType) {
-                document.querySelector(\`input[value="\${data.docType}"]\`).checked = true;
+                const rb = document.querySelector(`input[value="${data.docType}"]`);
+                if(rb) rb.checked = true;
             }
             renderEditTable();
+        } else {
+            document.getElementById('invDate').valueAsDate = new Date();
         }
     };
 
@@ -215,7 +254,7 @@
             docType: document.querySelector('input[name="docType"]:checked').value,
             items: items
         };
-        localStorage.setItem('inv_data_v2', JSON.stringify(data));
+        localStorage.setItem('inv_data_final_v1', JSON.stringify(data));
     }
 
     function addItem() {
@@ -229,24 +268,33 @@
         renderEditTable();
         saveAll();
         document.getElementById('t-desc').value = '';
+        document.getElementById('t-qty').value = '1';
+        document.getElementById('t-len').value = '';
+        document.getElementById('t-wid').value = '';
+        document.getElementById('t-rate').value = '';
         document.getElementById('t-desc').focus();
     }
 
     function renderEditTable() {
-        const tbody = document.getElementById('editBody');
-        tbody.innerHTML = '';
+        const container = document.getElementById('editList');
+        container.innerHTML = '';
+        if(items.length === 0) {
+            container.innerHTML = '<div style="padding:15px; color:#999; text-align:center;">No items added</div>';
+            return;
+        }
         items.forEach((item, i) => {
-            tbody.innerHTML += `<tr>
-                <td>\${item.desc}</td>
-                <td style="width:40px;"><button onclick="items.splice(\${i},1);renderEditTable();saveAll();">X</button></td>
-            </tr>`;
+            container.innerHTML += `<div class="item-list-row">
+                <span>${item.desc} (₹${item.rate})</span>
+                <button class="btn-del" onclick="items.splice(${i},1);renderEditTable();saveAll();">Delete</button>
+            </div>`;
         });
     }
 
     function generate() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        let sub = 0;
+        let subtotal = 0;
+        
         items.forEach((item, i) => {
             const q = item.qty || 1;
             let meas = 0;
@@ -256,41 +304,51 @@
             else { meas = q; unit = "Qty"; }
             
             const amt = meas * item.rate;
-            sub += amt;
-            tbody.innerHTML += \`<tr>
-                <td>\${i+1}</td>
-                <td style="text-align:left;">\${item.desc}</td>
-                <td>\${item.qty || '-'}</td>
-                <td>\${item.len || '-'}</td>
-                <td>\${item.wid || '-'}</td>
-                <td>\${meas.toFixed(2)} \${unit}</td>
-                <td>\${item.rate}</td>
-                <td>\${amt.toLocaleString('en-IN')}</td>
-            </tr>\`;
+            subtotal += amt;
+            tbody.innerHTML += `<tr>
+                <td>${i+1}</td>
+                <td style="text-align:left; padding-left:10px;">${item.desc}</td>
+                <td>${item.qty || '-'}</td>
+                <td>${item.len || '-'}</td>
+                <td>${item.wid || '-'}</td>
+                <td>${meas.toFixed(2)} ${unit}</td>
+                <td>${item.rate}</td>
+                <td>${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+            </tr>`;
         });
 
-        const ship = parseFloat(document.getElementById('shippingCharge').value) || 0;
-        document.getElementById('shippingRow').style.display = ship > 0 ? 'block' : 'none';
-        document.getElementById('outShipping').innerText = ship.toLocaleString('en-IN');
-        
-        document.getElementById('outTotal').innerText = (sub + ship).toLocaleString('en-IN');
-        document.getElementById('outClient').innerText = document.getElementById('client').value;
-        document.getElementById('outDate').innerText = document.getElementById('invDate').value;
-        
-        const note = document.getElementById('footerNoteInput').value;
-        document.getElementById('noteBox').style.display = note ? 'block' : 'none';
-        document.getElementById('noteContent').innerText = note;
+        const shipInput = document.getElementById('shippingCharge').value;
+        const shipVal = parseFloat(shipInput) || 0;
+        const shipRow = document.getElementById('shippingRow');
+        if(shipInput !== "" && shipVal > 0) {
+            shipRow.style.display = 'flex';
+            document.getElementById('outShipping').innerText = shipVal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        } else {
+            shipRow.style.display = 'none';
+        }
+
+        const noteInput = document.getElementById('footerNoteInput').value;
+        const noteBox = document.getElementById('noteBox');
+        if(noteInput.trim() !== "") {
+            noteBox.style.display = 'block';
+            document.getElementById('noteContent').innerText = noteInput;
+        } else {
+            noteBox.style.display = 'none';
+        }
+
+        document.getElementById('outSubtotal').innerText = subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('outTotal').innerText = (subtotal + shipVal).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('outClient').innerText = document.getElementById('client').value || "Guest Customer";
+        const d = document.getElementById('invDate').value;
+        document.getElementById('outDate').innerText = d ? new Date(d).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : "-";
 
         const isEstimate = document.querySelector('input[name="docType"]:checked').value === 'estimate';
         document.getElementById('estimateFlag').style.display = isEstimate ? 'block' : 'none';
-        return true;
     }
 
-    function previewInvoice() { generate(); document.getElementById('invoice').style.display = 'block'; }
-    function printInvoice() { generate(); window.print(); }
-    function confirmClear() { if(confirm("Clear all data?")) { localStorage.clear(); location.reload(); } }
+    function previewInvoice() { generate(); document.getElementById('invoice').style.display = 'block'; window.scrollTo(0, document.body.scrollHeight); }
+    function printInvoice() { generate(); document.getElementById('invoice').style.display = 'block'; setTimeout(()=>window.print(), 300); }
+    function confirmClear() { if(confirm("Clear all data and start a new invoice?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
 </html>
-
-
