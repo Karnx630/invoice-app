@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Generator</title>
     
-    <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a73e8">
     
-    <!-- Manifest for Installable App -->
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Invoice%20Generator%22,%22short_name%22:%22Invoicer%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#ffffff%22,%22theme_color%22:%22#1a73e8%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/1048/1048953.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+    <link rel="manifest" href="./manifest.json">
 
     <style>
         :root {
@@ -112,6 +110,10 @@
                 <label style="display:flex; align-items:center; gap:5px; text-transform:none;"><input type="radio" name="docType" value="estimate" onchange="saveAll()"> Estimate</label>
             </div>
         </div>
+        <div class="input-group" style="width: 100px;">
+            <label>Invoice No.</label>
+            <input type="number" id="invNo" placeholder="1001" oninput="saveAll()">
+        </div>
         <div class="input-group" style="flex: 2; min-width: 200px;">
             <label>Client Name</label>
             <input type="text" id="client" placeholder="Customer Name" oninput="saveAll()">
@@ -122,7 +124,6 @@
         </div>
     </div>
 
-    <!-- ENTRY FORM -->
     <div class="input-row">
         <div class="input-group" style="flex: 3; min-width: 150px;">
             <label>Description</label><input type="text" id="t-desc" placeholder="e.g. Tough Glass">
@@ -142,7 +143,6 @@
         <button class="btn-add" onclick="addItem()">Add Item</button>
     </div>
 
-    <!-- EDITABLE LIST -->
     <div class="edit-table-container">
         <table class="edit-table">
             <thead>
@@ -173,7 +173,7 @@
     <div class="action-row">
         <button class="btn-preview" onclick="previewInvoice()">Show Preview</button>
         <button class="btn-print" onclick="printInvoice()">Print PDF</button>
-        <button class="btn-clear" onclick="confirmClear()">Clear All</button>
+        <button class="btn-clear" onclick="confirmClear()">Start New Invoice</button>
     </div>
 </div>
 
@@ -186,9 +186,15 @@
             <div style="font-size: 11px; font-weight: bold; color: #666;">BILLED TO:</div>
             <div id="outClient" style="font-size: 18px; font-weight: bold;"></div>
         </div>
-        <div style="text-align: right;">
-            <div style="font-size: 11px; font-weight: bold; color: #666;">DATE:</div>
-            <div id="outDate" style="font-size: 16px;"></div>
+        <div style="text-align: right; display: flex; flex-direction: column; gap: 5px;">
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #666;">INVOICE NO: </span>
+                <span id="outInvNo" style="font-size: 16px; font-weight: bold;"></span>
+            </div>
+            <div>
+                <span style="font-size: 11px; font-weight: bold; color: #666;">DATE: </span>
+                <span id="outDate" style="font-size: 16px;"></span>
+            </div>
         </div>
     </div>
 
@@ -229,18 +235,14 @@
 </div>
 
 <script>
-    // PWA Service Worker Logic
+    // --- PWA Service Worker Registration ---
     let deferredPrompt;
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            const swCode = `
-                const CACHE_NAME = 'invoice-v4';
-                self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['./']))); });
-                self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))); });
-                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
-            `;
-            const blob = new Blob([swCode], {type: 'application/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(e => console.log(e));
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker registered', reg))
+                .catch(err => console.error('Service Worker failed', err));
         });
     }
 
@@ -254,17 +256,23 @@
         if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+            if (outcome === 'accepted') {
+                document.getElementById('installBtn').style.display = 'none';
+            }
             deferredPrompt = null;
         }
     });
 
+    // --- Invoice Logic ---
     let items = [];
 
     window.onload = () => {
-        const saved = localStorage.getItem('inv_data_v4');
+        const saved = localStorage.getItem('inv_data_v5');
+        const masterCounter = localStorage.getItem('inv_master_count') || 1001;
+
         if (saved) {
             const data = JSON.parse(saved);
+            document.getElementById('invNo').value = data.invNo || masterCounter;
             document.getElementById('client').value = data.client || '';
             document.getElementById('invDate').value = data.date || '';
             document.getElementById('footerNoteInput').value = data.note || '';
@@ -277,11 +285,13 @@
             renderEditList();
         } else {
             document.getElementById('invDate').valueAsDate = new Date();
+            document.getElementById('invNo').value = masterCounter;
         }
     };
 
     function saveAll() {
         const data = {
+            invNo: document.getElementById('invNo').value,
             client: document.getElementById('client').value,
             date: document.getElementById('invDate').value,
             note: document.getElementById('footerNoteInput').value,
@@ -289,7 +299,7 @@
             docType: document.querySelector('input[name="docType"]:checked').value,
             items: items
         };
-        localStorage.setItem('inv_data_v4', JSON.stringify(data));
+        localStorage.setItem('inv_data_v5', JSON.stringify(data));
     }
 
     function addItem() {
@@ -386,8 +396,12 @@
         document.getElementById('outSubtotal').innerText = subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
         document.getElementById('outTotal').innerText = (subtotal + shipVal).toLocaleString('en-IN', {minimumFractionDigits: 2});
         document.getElementById('outClient').innerText = document.getElementById('client').value || "Guest Customer";
+        
         const d = document.getElementById('invDate').value;
         document.getElementById('outDate').innerText = d ? new Date(d).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : "-";
+        
+        const invNoStr = document.getElementById('invNo').value;
+        document.getElementById('outInvNo').innerText = invNoStr ? "#" + invNoStr : "-";
 
         const isEstimate = document.querySelector('input[name="docType"]:checked').value === 'estimate';
         document.getElementById('estimateFlag').style.display = isEstimate ? 'block' : 'none';
@@ -395,7 +409,18 @@
 
     function previewInvoice() { generate(); document.getElementById('invoice').style.display = 'block'; window.scrollTo(0, document.body.scrollHeight); }
     function printInvoice() { generate(); document.getElementById('invoice').style.display = 'block'; setTimeout(()=>window.print(), 300); }
-    function confirmClear() { if(confirm("Start a new invoice? This clears all items.")) { localStorage.clear(); location.reload(); } }
+    
+    function confirmClear() { 
+        if(confirm("Start a new invoice? This will clear all items and increment your Invoice Number.")) { 
+            // Save the next invoice number so it auto-increments
+            let nextNo = (parseInt(document.getElementById('invNo').value) || 1000) + 1;
+            localStorage.setItem('inv_master_count', nextNo);
+            
+            // Clear current working data
+            localStorage.removeItem('inv_data_v5'); 
+            location.reload(); 
+        } 
+    }
 </script>
 </body>
 </html>
