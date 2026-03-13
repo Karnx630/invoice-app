@@ -8,7 +8,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a73e8">
-    
     <link rel="manifest" href="./manifest.json">
 
     <style>
@@ -23,19 +22,7 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; color: #333; }
         .setup-panel { max-width: 1000px; margin: 0 auto 20px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
-        #installBtn { 
-            display: none; 
-            background: #ff9800; 
-            color: white; 
-            border: none; 
-            padding: 12px; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            cursor: pointer;
-            margin-bottom: 20px;
-            width: 100%;
-            text-align: center;
-        }
+        #installBtn { display: none; background: #ff9800; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; width: 100%; text-align: center; }
 
         .input-group { display: flex; flex-direction: column; gap: 6px; }
         label { font-weight: 600; font-size: 11px; color: #555; text-transform: uppercase; }
@@ -43,7 +30,6 @@
         
         .input-row { display: flex; gap: 10px; background: #f8fbff; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap; border: 1px solid #e1e8f0; }
         
-        /* Interactive Edit Table */
         .edit-table-container { overflow-x: auto; margin-bottom: 20px; border: 1px solid #eee; border-radius: 8px; }
         .edit-table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
         .edit-table th { background: #f1f4f8; padding: 10px; text-align: left; color: #666; font-size: 11px; }
@@ -54,38 +40,30 @@
         .btn-add { background: var(--success); color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 40px; }
         .btn-del { color: var(--danger); border: none; background: none; cursor: pointer; font-weight: bold; }
 
-        .invoice-container { 
-            max-width: 800px; 
-            margin: 40px auto; 
-            background: white; 
-            padding: 50px; 
-            border: 1px solid #eee; 
-            display: none; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            position: relative; 
-            min-height: 1000px;
-        }
+        .invoice-container { max-width: 800px; margin: 40px auto; background: white; padding: 50px; border: 1px solid #eee; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-height: 1000px; }
         
         .religious-header { text-align: center; font-weight: bold; margin-bottom: 25px; font-size: 22px; color: #d32f2f; letter-spacing: 1px; } 
         .estimate-label { display: none; position: absolute; top: 25px; right: 25px; font-size: 11px; font-weight: 800; color: #777; text-transform: uppercase; border: 1.5px solid #777; padding: 4px 10px; border-radius: 4px; }
 
         .out-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid var(--border); }
-        .out-table th, .out-table td { border: 1px solid var(--border); padding: 8px; text-align: center; font-size: 14px; }
+        .out-table th, .out-table td { border: 1px solid var(--border); padding: 8px; text-align: center; font-size: 14px; color: #000; }
         .out-table th { background: var(--secondary); color: white; text-transform: uppercase; font-size: 11px; }
 
         .summary-container { margin-top: -1px; width: 100%; }
         .summary-row { display: flex; justify-content: flex-end; }
-        .summary-cell { width: 180px; border: 1px solid var(--border); border-top: none; padding: 10px; text-align: right; font-size: 14px; }
-        .grand-total { font-weight: bold; font-size: 18px; background: #f8f9fa; }
+        .summary-cell { width: 180px; border: 1px solid var(--border); border-top: none; padding: 10px; text-align: right; font-size: 14px; color: #000; }
+        .grand-total { font-weight: bold; font-size: 18px; background: #f8f9fa; color: #000 !important; }
 
         .action-row { display: flex; gap: 12px; margin-top: 25px; flex-wrap: wrap; }
         .btn-preview { background: #5c6bc0; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-size: 16px; flex: 1; font-weight: bold; }
         .btn-print { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-size: 16px; flex: 1; font-weight: bold; }
         .btn-clear { background: var(--danger); color: white; border: none; padding: 15px 25px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; }
 
-        .footer-note { margin-top: 40px; font-size: 13px; color: #333; border-top: 1px dashed #ccc; padding-top: 15px; display: none; }
+        .footer-note { margin-top: 40px; font-size: 13px; color: #000; border-top: 1px dashed #ccc; padding-top: 15px; display: none; }
 
         @media print { 
+            /* Forces printers to render background colors and prevents fading */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .setup-panel { display: none !important; } 
             .invoice-container { display: block !important; border: none; padding: 0; box-shadow: none; margin: 0; width: 100%; } 
             body { background: white; padding: 0; }
@@ -106,13 +84,13 @@
         <div class="input-group">
             <label>Type</label>
             <div style="display:flex; gap:10px; padding: 8px; border:1px solid #ccd; border-radius:6px; background:white;">
-                <label style="display:flex; align-items:center; gap:5px; text-transform:none;"><input type="radio" name="docType" value="invoice" checked onchange="saveAll()"> Invoice</label>
-                <label style="display:flex; align-items:center; gap:5px; text-transform:none;"><input type="radio" name="docType" value="estimate" onchange="saveAll()"> Estimate</label>
+                <label style="display:flex; align-items:center; gap:5px; text-transform:none;"><input type="radio" name="docType" value="invoice" checked onchange="toggleDocType()"> Invoice</label>
+                <label style="display:flex; align-items:center; gap:5px; text-transform:none;"><input type="radio" name="docType" value="estimate" onchange="toggleDocType()"> Estimate</label>
             </div>
         </div>
         <div class="input-group" style="width: 100px;">
-            <label>Invoice No.</label>
-            <input type="number" id="invNo" placeholder="1001" oninput="saveAll()">
+            <label id="docNoLabel">Invoice No.</label>
+            <input type="number" id="docNo" placeholder="1001" oninput="saveAll()">
         </div>
         <div class="input-group" style="flex: 2; min-width: 200px;">
             <label>Client Name</label>
@@ -172,8 +150,8 @@
 
     <div class="action-row">
         <button class="btn-preview" onclick="previewInvoice()">Show Preview</button>
-        <button class="btn-print" onclick="printInvoice()">Print PDF</button>
-        <button class="btn-clear" onclick="confirmClear()">Start New Invoice</button>
+        <button class="btn-print" onclick="printInvoice()">Print PDF & Save Number</button>
+        <button class="btn-clear" onclick="confirmClear()">Start New Document</button>
     </div>
 </div>
 
@@ -183,17 +161,17 @@
     
     <div style="display: flex; justify-content: space-between; margin-bottom: 30px; border-bottom: 2px solid var(--secondary); padding-bottom: 10px;">
         <div>
-            <div style="font-size: 11px; font-weight: bold; color: #666;">BILLED TO:</div>
-            <div id="outClient" style="font-size: 18px; font-weight: bold;"></div>
+            <div style="font-size: 11px; font-weight: bold; color: #000;">BILLED TO:</div>
+            <div id="outClient" style="font-size: 18px; font-weight: bold; color: #000;"></div>
         </div>
         <div style="text-align: right; display: flex; flex-direction: column; gap: 5px;">
             <div>
-                <span style="font-size: 11px; font-weight: bold; color: #666;">INVOICE NO: </span>
-                <span id="outInvNo" style="font-size: 16px; font-weight: bold;"></span>
+                <span id="outNoLabel" style="font-size: 11px; font-weight: bold; color: #000;">INVOICE NO: </span>
+                <span id="outDocNo" style="font-size: 16px; font-weight: bold; color: #000;"></span>
             </div>
             <div>
-                <span style="font-size: 11px; font-weight: bold; color: #666;">DATE: </span>
-                <span id="outDate" style="font-size: 16px;"></span>
+                <span style="font-size: 11px; font-weight: bold; color: #000;">DATE: </span>
+                <span id="outDate" style="font-size: 16px; color: #000; font-weight: bold;"></span>
             </div>
         </div>
     </div>
@@ -216,16 +194,16 @@
 
     <div class="summary-container">
         <div class="summary-row">
-            <div class="summary-cell" style="border-right: none; color: #555;">Subtotal</div>
-            <div class="summary-cell" id="outSubtotal">0.00</div>
+            <div class="summary-cell" style="border-right: none; font-weight: bold;">Subtotal</div>
+            <div class="summary-cell" id="outSubtotal" style="font-weight: bold;">0.00</div>
         </div>
         <div id="shippingRow" class="summary-row" style="display: none;">
-            <div class="summary-cell" style="border-right: none; color: #555;">Shipping Charge</div>
-            <div class="summary-cell" id="outShipping">0.00</div>
+            <div class="summary-cell" style="border-right: none; font-weight: bold;">Shipping Charge</div>
+            <div class="summary-cell" id="outShipping" style="font-weight: bold;">0.00</div>
         </div>
         <div class="summary-row">
             <div class="summary-cell grand-total" style="border-right: none;">GRAND TOTAL</div>
-            <div class="summary-cell grand-total" style="color: var(--secondary);">₹ <span id="outTotal">0.00</span></div>
+            <div class="summary-cell grand-total" style="color: var(--secondary) !important;">₹ <span id="outTotal">0.00</span></div>
         </div>
     </div>
 
@@ -241,7 +219,6 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Service Worker registered', reg))
                 .catch(err => console.error('Service Worker failed', err));
         });
     }
@@ -256,50 +233,65 @@
         if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                document.getElementById('installBtn').style.display = 'none';
-            }
+            if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
             deferredPrompt = null;
         }
     });
 
     // --- Invoice Logic ---
     let items = [];
+    let hasPrinted = false; // Tracks if they hit print
 
     window.onload = () => {
-        const saved = localStorage.getItem('inv_data_v5');
-        const masterCounter = localStorage.getItem('inv_master_count') || 1001;
+        const saved = localStorage.getItem('inv_data_v6');
 
         if (saved) {
             const data = JSON.parse(saved);
-            document.getElementById('invNo').value = data.invNo || masterCounter;
+            if (data.docType) {
+                const rb = document.querySelector(`input[value="${data.docType}"]`);
+                if(rb) rb.checked = true;
+            }
             document.getElementById('client').value = data.client || '';
             document.getElementById('invDate').value = data.date || '';
             document.getElementById('footerNoteInput').value = data.note || '';
             document.getElementById('shippingCharge').value = data.shipping || '';
             items = data.items || [];
-            if (data.docType) {
-                const rb = document.querySelector(`input[value="${data.docType}"]`);
-                if(rb) rb.checked = true;
-            }
+            
+            toggleDocType(false); // Set labels and base number
+            if (data.docNo) document.getElementById('docNo').value = data.docNo; // Restore exactly what was typed
             renderEditList();
         } else {
             document.getElementById('invDate').valueAsDate = new Date();
-            document.getElementById('invNo').value = masterCounter;
+            toggleDocType(false);
         }
     };
 
+    function toggleDocType(triggerSave = true) {
+        const type = document.querySelector('input[name="docType"]:checked').value;
+        const docNoLabel = document.getElementById('docNoLabel');
+        const docNoInput = document.getElementById('docNo');
+        
+        if (type === 'invoice') {
+            docNoLabel.innerText = 'Invoice No.';
+            docNoInput.value = localStorage.getItem('inv_master_count') || 1001;
+        } else {
+            docNoLabel.innerText = 'Estimate No.';
+            docNoInput.value = localStorage.getItem('est_master_count') || 1001;
+        }
+        if (triggerSave) saveAll();
+    }
+
     function saveAll() {
         const data = {
-            invNo: document.getElementById('invNo').value,
+            docType: document.querySelector('input[name="docType"]:checked').value,
+            docNo: document.getElementById('docNo').value,
             client: document.getElementById('client').value,
             date: document.getElementById('invDate').value,
             note: document.getElementById('footerNoteInput').value,
             shipping: document.getElementById('shippingCharge').value,
-            docType: document.querySelector('input[name="docType"]:checked').value,
             items: items
         };
-        localStorage.setItem('inv_data_v5', JSON.stringify(data));
+        localStorage.setItem('inv_data_v6', JSON.stringify(data));
     }
 
     function addItem() {
@@ -312,7 +304,6 @@
         items.push({ desc, qty, len, wid, rate });
         renderEditList();
         saveAll();
-        // Clear inputs
         document.getElementById('t-desc').value = '';
         document.getElementById('t-qty').value = '1';
         document.getElementById('t-len').value = '';
@@ -362,15 +353,16 @@
             
             const amt = meas * item.rate;
             subtotal += amt;
+            // Added styling directly to the description cell for dark/bold text
             tbody.innerHTML += `<tr>
                 <td>${i+1}</td>
-                <td style="text-align:left;">${item.desc}</td>
+                <td style="text-align:left; font-weight:bold; color:#000;">${item.desc}</td>
                 <td>${item.qty || '-'}</td>
                 <td>${item.len || '-'}</td>
                 <td>${item.wid || '-'}</td>
                 <td>${meas.toFixed(2)} ${unit}</td>
                 <td>${item.rate}</td>
-                <td>${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                <td style="font-weight:bold;">${amt.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
             </tr>`;
         });
 
@@ -400,24 +392,41 @@
         const d = document.getElementById('invDate').value;
         document.getElementById('outDate').innerText = d ? new Date(d).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : "-";
         
-        const invNoStr = document.getElementById('invNo').value;
-        document.getElementById('outInvNo').innerText = invNoStr ? "#" + invNoStr : "-";
-
         const isEstimate = document.querySelector('input[name="docType"]:checked').value === 'estimate';
+        
+        // Handle Labels based on doc type
+        document.getElementById('outNoLabel').innerText = isEstimate ? "EST NO: " : "INVOICE NO: ";
+        const docNoStr = document.getElementById('docNo').value;
+        document.getElementById('outDocNo').innerText = docNoStr ? "#" + docNoStr : "-";
         document.getElementById('estimateFlag').style.display = isEstimate ? 'block' : 'none';
     }
 
     function previewInvoice() { generate(); document.getElementById('invoice').style.display = 'block'; window.scrollTo(0, document.body.scrollHeight); }
-    function printInvoice() { generate(); document.getElementById('invoice').style.display = 'block'; setTimeout(()=>window.print(), 300); }
+    
+    function printInvoice() { 
+        generate(); 
+        document.getElementById('invoice').style.display = 'block'; 
+        hasPrinted = true; // Mark as printed so we know to increment later
+        setTimeout(()=>window.print(), 300); 
+    }
     
     function confirmClear() { 
-        if(confirm("Start a new invoice? This will clear all items and increment your Invoice Number.")) { 
-            // Save the next invoice number so it auto-increments
-            let nextNo = (parseInt(document.getElementById('invNo').value) || 1000) + 1;
-            localStorage.setItem('inv_master_count', nextNo);
+        if(confirm("Start a new document? This will clear all items.")) { 
+            
+            // ONLY increment the number if they actually pressed "Print PDF" during this session
+            if (hasPrinted) {
+                const type = document.querySelector('input[name="docType"]:checked').value;
+                let nextNo = (parseInt(document.getElementById('docNo').value) || 1000) + 1;
+                
+                if (type === 'invoice') {
+                    localStorage.setItem('inv_master_count', nextNo);
+                } else {
+                    localStorage.setItem('est_master_count', nextNo);
+                }
+            }
             
             // Clear current working data
-            localStorage.removeItem('inv_data_v5'); 
+            localStorage.removeItem('inv_data_v6'); 
             location.reload(); 
         } 
     }
