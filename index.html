@@ -254,6 +254,226 @@
 </script>
 </body>
 </html>
+        .out-table th { background-color: #003366 !important; color: #fff !important; padding: 10px; text-transform: uppercase; font-size: 12px; -webkit-print-color-adjust: exact; }
+        .out-table td { border: 1px solid #000; padding: 10px; text-align: center; font-size: 14px; color: #000; }
+
+        .summary-cell { width: 180px; border: 1px solid #000; border-top: none; padding: 10px; text-align: right; font-weight: bold; color: #000; }
+
+        /* HISTORY TABLE */
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .history-table th { text-align: left; font-size: 11px; border-bottom: 2px solid #eee; padding: 10px; }
+        .history-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+
+        @media print { 
+            body { background: white; padding: 0; }
+            .setup-panel, .history-panel, .action-row { display: none !important; } 
+            .invoice-container { display: block !important; border: none; box-shadow: none; width: 100%; padding: 0; margin: 0; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            .out-table th { background-color: #003366 !important; color: white !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="setup-panel">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <h2 style="margin:0; color: var(--secondary);">Invoicer Pro</h2>
+        <div style="display:flex; gap:15px; background:#f0f2f5; padding:5px 15px; border-radius:30px;">
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="docType" value="invoice" checked onchange="switchMode()"> Invoice</label>
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="docType" value="estimate" onchange="switchMode()"> Estimate</label>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div class="input-group" style="width: 120px;">
+            <label id="numLabel">Invoice No.</label>
+            <input type="text" id="docNo">
+        </div>
+        <div class="input-group" style="flex: 2; min-width: 200px;">
+            <label>Client Name</label>
+            <input type="text" id="client" placeholder="Customer Name">
+        </div>
+        <div class="input-group">
+            <label>Date</label>
+            <input type="date" id="invDate">
+        </div>
+    </div>
+
+    <div class="input-row">
+        <div class="input-group" style="flex: 3; min-width: 150px;"><label>Description</label><input type="text" id="t-desc"></div>
+        <div class="input-group" style="width: 50px;"><label>Qty</label><input type="number" id="t-qty" value="1"></div>
+        <div class="input-group" style="width: 60px;"><label>Len</label><input type="number" id="t-len"></div>
+        <div class="input-group" style="width: 60px;"><label>Wid</label><input type="number" id="t-wid"></div>
+        <div class="input-group" style="width: 90px;"><label>Rate</label><input type="number" id="t-rate"></div>
+        <button class="btn-add" onclick="addItem()">Add</button>
+    </div>
+
+    <table class="edit-table">
+        <tbody id="editBody"></tbody>
+    </table>
+
+    <div style="display: flex; gap: 15px; margin-top: 20px;">
+        <div class="input-group" style="width: 150px;"><label>Shipping</label><input type="number" id="shipping" value="0"></div>
+        <div class="input-group" style="flex:1;"><label>Note</label><input type="text" id="note"></div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 25px;">
+        <button class="btn-print" style="background:#5c6bc0" onclick="renderPreview()">Preview</button>
+        <button class="btn-print" onclick="printAndSave()">Print & Archive</button>
+        <button class="btn-clear" onclick="clearForm()">New Bill</button>
+    </div>
+</div>
+
+<div class="history-panel">
+    <label>Saved Documents (Archive)</label>
+    <table class="history-table">
+        <thead><tr><th>Type</th><th>No.</th><th>Client</th><th>Total</th><th>Action</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+    </table>
+</div>
+
+<div id="invoice" class="invoice-container">
+    <div class="religious-header">।। श्री गणेशाय नम ।।</div>
+    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #003366; padding-bottom: 10px;">
+        <div><label>Billed To:</label><div id="outClient" style="font-size: 18px; font-weight: bold;"></div></div>
+        <div style="text-align: right;">
+            <div id="outLabel" style="font-weight: bold;">INVOICE NO: </div><div id="outNo" style="font-size: 18px; font-weight: bold;"></div>
+            <div style="margin-top:5px;">DATE: <span id="outDate" style="font-weight: bold;"></span></div>
+        </div>
+    </div>
+    <table class="out-table">
+        <thead><tr><th>Sr.</th><th style="text-align:left;">Description</th><th>Qty</th><th>Len</th><th>Wid</th><th>S.F/R.F</th><th>Rate</th><th>Total</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+        <div style="display:flex;"><div class="summary-cell" style="border-right:none;">Subtotal</div><div class="summary-cell" id="outSub"></div></div>
+        <div style="display:flex;"><div class="summary-cell" style="border-right:none; background:#f9f9f9;">GRAND TOTAL</div><div class="summary-cell" id="outGrand" style="background:#f9f9f9; font-size:18px;"></div></div>
+    </div>
+    <div id="outNote" style="margin-top:30px; border-top:1px dashed #ccc; padding-top:10px; font-size:12px;"></div>
+</div>
+
+<script>
+    let items = [];
+    let archive = JSON.parse(localStorage.getItem('my_archives') || '[]');
+
+    window.onload = () => {
+        document.getElementById('invDate').valueAsDate = new Date();
+        switchMode(); // Set initial number
+        renderHistory();
+    };
+
+    function switchMode() {
+        const type = document.querySelector('input[name="docType"]:checked').value;
+        const label = document.getElementById('numLabel');
+        const countKey = type === 'invoice' ? 'inv_count' : 'est_count';
+        label.innerText = type === 'invoice' ? "Invoice No." : "Estimate No.";
+        document.getElementById('docNo').value = localStorage.getItem(countKey) || '1001';
+    }
+
+    function addItem() {
+        const desc = document.getElementById('t-desc').value;
+        if(!desc) return;
+        items.push({
+            desc, 
+            qty: parseFloat(document.getElementById('t-qty').value) || 1,
+            len: parseFloat(document.getElementById('t-len').value) || 0,
+            wid: parseFloat(document.getElementById('t-wid').value) || 0,
+            rate: parseFloat(document.getElementById('t-rate').value) || 0
+        });
+        document.getElementById('t-desc').value = '';
+        renderEditList();
+    }
+
+    function renderEditList() {
+        const b = document.getElementById('editBody');
+        b.innerHTML = items.map((it, i) => `<tr><td><b>${it.desc}</b></td><td>${it.qty} Qty</td><td>₹${it.rate}</td><td><button onclick="items.splice(${i},1);renderEditList()" style="color:red; border:none; background:none; cursor:pointer">✕</button></td></tr>`).join('');
+    }
+
+    function generate() {
+        const type = document.querySelector('input[name="docType"]:checked').value;
+        document.getElementById('outLabel').innerText = type.toUpperCase() + " NO: ";
+        document.getElementById('outNo').innerText = "#" + document.getElementById('docNo').value;
+        document.getElementById('outClient').innerText = document.getElementById('client').value || "Walk-in Customer";
+        document.getElementById('outDate').innerText = document.getElementById('invDate').value;
+        
+        let sub = 0;
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = items.map((it, i) => {
+            let m = it.len > 0 && it.wid > 0 ? it.len * it.wid * it.qty : (it.len > 0 ? it.len * it.qty : it.qty);
+            let total = m * it.rate;
+            sub += total;
+            return `<tr><td>${i+1}</td><td style="text-align:left; font-weight:bold;">${it.desc}</td><td>${it.qty}</td><td>${it.len||'-'}</td><td>${it.wid||'-'}</td><td>${m.toFixed(2)}</td><td>${it.rate}</td><td>${total.toFixed(2)}</td></tr>`;
+        }).join('');
+
+        const ship = parseFloat(document.getElementById('shipping').value) || 0;
+        document.getElementById('outSub').innerText = "₹ " + sub.toFixed(2);
+        document.getElementById('outGrand').innerText = "₹ " + (sub + ship).toFixed(2);
+        document.getElementById('outNote').innerText = document.getElementById('note').value ? "Note: " + document.getElementById('note').value : "";
+        return (sub + ship).toFixed(2);
+    }
+
+    function renderPreview() { generate(); document.getElementById('invoice').style.display = 'block'; }
+
+    function printAndSave() {
+        const total = generate();
+        document.getElementById('invoice').style.display = 'block';
+        
+        // Save to Archive
+        const entry = {
+            type: document.querySelector('input[name="docType"]:checked').value,
+            no: document.getElementById('docNo').value,
+            client: document.getElementById('client').value || "N/A",
+            total: total,
+            date: document.getElementById('invDate').value,
+            items: [...items]
+        };
+        archive.push(entry);
+        localStorage.setItem('my_archives', JSON.stringify(archive));
+        
+        // Increment Counter
+        const type = document.querySelector('input[name="docType"]:checked').value;
+        const countKey = type === 'invoice' ? 'inv_count' : 'est_count';
+        localStorage.setItem(countKey, parseInt(document.getElementById('docNo').value) + 1);
+        
+        renderHistory();
+        setTimeout(() => { window.print(); }, 500);
+    }
+
+    function renderHistory() {
+        const b = document.getElementById('historyBody');
+        b.innerHTML = archive.map((h, i) => `
+            <tr>
+                <td>${h.type.toUpperCase()}</td>
+                <td>#${h.no}</td>
+                <td>${h.client}</td>
+                <td>₹${h.total}</td>
+                <td><button onclick="deleteHistory(${i})" style="color:red; border:none; background:none; cursor:pointer">Delete</button></td>
+            </tr>
+        `).reverse().join('');
+    }
+
+    function deleteHistory(i) {
+        if(confirm("Delete this record permanently?")) {
+            archive.splice(i, 1);
+            localStorage.setItem('my_archives', JSON.stringify(archive));
+            renderHistory();
+        }
+    }
+
+    function clearForm() {
+        if(confirm("Clear current form?")) {
+            items = [];
+            document.getElementById('client').value = '';
+            document.getElementById('note').value = '';
+            document.getElementById('shipping').value = '0';
+            renderEditList();
+            switchMode();
+            document.getElementById('invoice').style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1087,5 +1307,6 @@
 </script>
 </body>
 </html>
+
 
 
