@@ -11,53 +11,48 @@
     <link rel="manifest" href="./manifest.json">
 
     <style>
-        :root { --primary: #1a73e8; --secondary: #003366; --danger: #dc3545; --success: #28a745; --warning: #ffc107; }
+        :root { --primary: #1a73e8; --secondary: #003366; --danger: #dc3545; --success: #28a745; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 15px; background: #f0f2f5; color: #333; }
         
-        /* UI Panels */
-        .setup-panel, .history-panel { max-width: 900px; margin: 0 auto 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .setup-panel, .history-panel { max-width: 950px; margin: 0 auto 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .input-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
         label { font-weight: 800; font-size: 10px; color: #666; text-transform: uppercase; }
         input { padding: 12px; border: 1px solid #ccd; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
         
-        .input-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 8px; background: #f8fbff; padding: 15px; border-radius: 8px; align-items: end; margin-bottom: 15px; }
+        /* The main entry row */
+        .input-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 8px; background: #f8fbff; padding: 15px; border-radius: 8px; align-items: end; margin-bottom: 15px; border: 1px solid #e0e6ed; }
         
+        /* Editable Table Styling */
+        .edit-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; }
+        .edit-table th { text-align: left; font-size: 11px; color: #888; padding: 8px; text-transform: uppercase; border-bottom: 2px solid #eee; }
+        .edit-table td { padding: 5px; border-bottom: 1px solid #f0f0f0; }
+        .edit-table input { padding: 8px; border: 1px solid transparent; border-radius: 4px; background: #f9f9f9; }
+        .edit-table input:focus { border-color: var(--primary); background: white; outline: none; }
+        .row-total { font-weight: bold; color: var(--secondary); font-size: 14px; text-align: right; padding-right: 10px; }
+
         .btn { padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-add { background: var(--success); color: white; width: 100%; }
         .btn-print { background: var(--primary); color: white; flex: 1; font-size: 16px; }
         .btn-clear { background: var(--danger); color: white; }
-        .btn-edit { background: var(--warning); color: #000; padding: 6px 12px; font-size: 12px; }
 
-        /* Invoice Output (Hidden until Preview/Print) */
+        /* Invoice Output (Print) */
         #invoice { max-width: 800px; margin: 20px auto; background: white; padding: 40px; display: none; color: #000; border: 1px solid #eee; }
         .religious-header { text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 20px; color: #d32f2f; }
-        
-        /* Table Styling - Forced for Print */
         .out-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid #000; }
-        .out-table th { background-color: #003366 !important; color: white !important; padding: 12px 8px; text-transform: uppercase; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .out-table td { border: 1px solid #000; padding: 10px; text-align: center; font-weight: 500; }
-        .desc-cell { text-align: left !important; font-weight: bold !important; font-size: 15px; }
+        .out-table th { background-color: #003366 !important; color: white !important; padding: 12px 8px; -webkit-print-color-adjust: exact; }
+        .out-table td { border: 1px solid #000; padding: 10px; text-align: center; }
 
         .summary-wrapper { display: flex; flex-direction: column; align-items: flex-end; margin-top: -2px; }
         .summary-box { display: flex; width: 300px; border: 2px solid #000; border-top: none; }
         .summary-label { flex: 1; padding: 10px; font-weight: bold; border-right: 1px solid #000; text-align: right; }
         .summary-val { width: 120px; padding: 10px; font-weight: bold; text-align: right; }
 
-        /* History List */
-        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .history-table th { text-align: left; padding: 10px; border-bottom: 2px solid #eee; }
-        .history-table td { padding: 10px; border-bottom: 1px solid #eee; }
-        .history-row { cursor: pointer; transition: background 0.2s; }
+        .history-row { cursor: pointer; }
         .history-row:hover { background: #f8fbff; }
-        
-        .btn-del-history { background: transparent; border: none; font-size: 16px; cursor: pointer; padding: 5px; border-radius: 4px; transition: 0.2s; }
-        .btn-del-history:hover { background: #fee; }
 
         @media print {
-            body { background: white; padding: 0; }
             .setup-panel, .history-panel, .action-bar, .btn-clear { display: none !important; }
             #invoice { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>
@@ -72,26 +67,44 @@
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 15px;">
-        <div class="input-group"><label id="numLabel">Invoice No.</label><input type="text" id="docNo"></div>
+    <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div class="input-group"><label id="numLabel">No.</label><input type="text" id="docNo"></div>
         <div class="input-group"><label>Client Name</label><input type="text" id="client" placeholder="Customer Name"></div>
         <div class="input-group"><label>Date</label><input type="date" id="invDate"></div>
     </div>
 
     <div class="input-row">
-        <div class="input-group"><label>Description</label><input type="text" id="t-desc"></div>
+        <div class="input-group"><label>Description</label><input type="text" id="t-desc" placeholder="Item Name"></div>
         <div class="input-group"><label>Qty</label><input type="number" id="t-qty" value="1"></div>
-        <div class="input-group"><label>Len</label><input type="number" id="t-len"></div>
-        <div class="input-group"><label>Wid</label><input type="number" id="t-wid"></div>
-        <div class="input-group"><label>Rate</label><input type="number" id="t-rate"></div>
+        <div class="input-group"><label>Len</label><input type="number" id="t-len" placeholder="0"></div>
+        <div class="input-group"><label>Wid</label><input type="number" id="t-wid" placeholder="0"></div>
+        <div class="input-group"><label>Rate</label><input type="number" id="t-rate" placeholder="0"></div>
         <button class="btn btn-add" onclick="addItem()">ADD</button>
     </div>
 
-    <div id="itemListUI" style="margin-bottom: 15px;"></div>
+    <table class="edit-table">
+        <thead>
+            <tr>
+                <th style="width: 40%;">Description</th>
+                <th>Qty</th>
+                <th>Len</th>
+                <th>Wid</th>
+                <th>Rate</th>
+                <th style="text-align:right">Total</th>
+                <th style="width: 40px;"></th>
+            </tr>
+        </thead>
+        <tbody id="editableBody">
+            </tbody>
+    </table>
 
-    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-top:10px;">
-        <div class="input-group"><label>Shipping</label><input type="number" id="shipping" value="0"></div>
-        <div class="input-group"><label>Special Note</label><input type="text" id="note" placeholder="Optional"></div>
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
+        <div class="input-group"><label>Shipping/Other</label><input type="number" id="shipping" value="0" oninput="calculateLiveTotal()"></div>
+        <div class="input-group"><label>Special Note</label><input type="text" id="note" placeholder="Optional notes..."></div>
+    </div>
+
+    <div style="text-align: right; margin-top: 10px; font-size: 18px; font-weight: bold;">
+        Current Total: <span id="liveGrandTotal">₹0.00</span>
     </div>
 
     <div class="action-bar" style="display: flex; gap: 10px; margin-top: 20px;">
@@ -102,8 +115,8 @@
 </div>
 
 <div class="history-panel">
-    <label style="margin-bottom: 10px; display:block;">Recent History (Click to load)</label>
-    <table class="history-table">
+    <label style="margin-bottom: 10px; display:block;">Recent History</label>
+    <table class="history-table" style="width:100%; border-collapse: collapse;">
         <tbody id="historyBody"></tbody>
     </table>
 </div>
@@ -113,39 +126,29 @@
     <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #003366; padding-bottom: 10px; margin-bottom: 20px;">
         <div><label>Billed To:</label><div id="outClient" style="font-size: 20px; font-weight: bold;"></div></div>
         <div style="text-align: right;">
-            <div style="font-size: 12px; font-weight: bold;" id="outDocLabel">INVOICE NO:</div>
+            <div id="outDocLabel" style="font-size: 12px; font-weight: bold;">INVOICE NO:</div>
             <div id="outDocNo" style="font-size: 18px; font-weight: bold;"></div>
             <div style="margin-top:5px; font-size: 12px;">DATE: <span id="outDate" style="font-weight: bold;"></span></div>
         </div>
     </div>
-
     <table class="out-table">
         <thead>
             <tr>
-                <th style="width:30px">Sr.</th>
-                <th style="text-align:left">Description</th>
-                <th>Qty</th>
-                <th>Len</th>
-                <th>Wid</th>
-                <th>S.F/R.F</th>
-                <th>Rate</th>
-                <th>Total</th>
+                <th>Sr.</th><th>Description</th><th>Qty</th><th>Len</th><th>Wid</th><th>S.F/R.F</th><th>Rate</th><th>Total</th>
             </tr>
         </thead>
         <tbody id="outBody"></tbody>
     </table>
-
     <div class="summary-wrapper">
         <div class="summary-box"><div class="summary-label">Subtotal</div><div class="summary-val" id="outSub"></div></div>
         <div class="summary-box" style="background: #eee;"><div class="summary-label">GRAND TOTAL</div><div class="summary-val" id="outGrand"></div></div>
     </div>
-    <div id="outNote" style="margin-top:30px; font-style: italic; font-size: 13px;"></div>
+    <div id="outNote" style="margin-top:30px; font-style: italic;"></div>
 </div>
 
 <script>
     let items = [];
     let history = JSON.parse(localStorage.getItem('inv_history') || '[]');
-    let hasPrinted = false;
 
     window.onload = () => {
         document.getElementById('invDate').valueAsDate = new Date();
@@ -156,7 +159,7 @@
     function handleModeChange() {
         const type = document.querySelector('input[name="docType"]:checked').value;
         const countKey = type === 'invoice' ? 'count_inv' : 'count_est';
-        document.getElementById('numLabel').innerText = type === 'invoice' ? "Invoice No." : "Estimate No.";
+        document.getElementById('numLabel').innerText = type === 'invoice' ? "Inv No." : "Est No.";
         document.getElementById('docNo').value = localStorage.getItem(countKey) || '1001';
     }
 
@@ -171,7 +174,8 @@
             wid: parseFloat(document.getElementById('t-wid').value) || 0,
             rate: parseFloat(document.getElementById('t-rate').value) || 0
         });
-        
+
+        // Clear top inputs
         document.getElementById('t-desc').value = '';
         document.getElementById('t-qty').value = '1';
         document.getElementById('t-len').value = '';
@@ -181,32 +185,39 @@
         renderItemList();
     }
 
-    function editItem(i) {
-        const it = items[i];
-        document.getElementById('t-desc').value = it.desc;
-        document.getElementById('t-qty').value = it.qty;
-        document.getElementById('t-len').value = it.len || '';
-        document.getElementById('t-wid').value = it.wid || '';
-        document.getElementById('t-rate').value = it.rate || '';
-        
-        items.splice(i, 1);
-        renderItemList();
+    function updateItem(index, field, value) {
+        items[index][field] = field === 'desc' ? value : parseFloat(value) || 0;
+        renderItemList(); // Re-render to update row totals and grand total
     }
 
     function renderItemList() {
-        const div = document.getElementById('itemListUI');
-        div.innerHTML = items.map((it, i) => `
-            <div style="display:flex; justify-content:space-between; align-items: center; padding:10px; border-bottom:1px solid #ddd; font-size:14px; background:#fff; margin-bottom:4px; border-radius:4px;">
-                <div style="flex:1;">
-                    <b>${it.desc}</b><br>
-                    <span style="font-size: 12px; color: #555;">Qty: ${it.qty} | Len: ${it.len||'-'} | Wid: ${it.wid||'-'} | Rate: ₹${it.rate}</span>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-edit" onclick="editItem(${i})">Edit</button>
-                    <span style="color:red; cursor:pointer; font-weight:bold; font-size:16px; padding: 4px;" onclick="items.splice(${i},1);renderItemList()">✕</span>
-                </div>
-            </div>
-        `).join('');
+        const tbody = document.getElementById('editableBody');
+        let grand = 0;
+
+        tbody.innerHTML = items.map((it, i) => {
+            let measure = it.len > 0 && it.wid > 0 ? it.len * it.wid * it.qty : (it.len > 0 ? it.len * it.qty : it.qty);
+            let rowTotal = measure * it.rate;
+            grand += rowTotal;
+
+            return `
+                <tr>
+                    <td><input type="text" value="${it.desc}" oninput="updateItem(${i}, 'desc', this.value)"></td>
+                    <td><input type="number" value="${it.qty}" oninput="updateItem(${i}, 'qty', this.value)"></td>
+                    <td><input type="number" value="${it.len}" oninput="updateItem(${i}, 'len', this.value)"></td>
+                    <td><input type="number" value="${it.wid}" oninput="updateItem(${i}, 'wid', this.value)"></td>
+                    <td><input type="number" value="${it.rate}" oninput="updateItem(${i}, 'rate', this.value)"></td>
+                    <td class="row-total">₹${rowTotal.toFixed(2)}</td>
+                    <td><span style="color:red; cursor:pointer;" onclick="items.splice(${i},1);renderItemList()">✕</span></td>
+                </tr>
+            `;
+        }).join('');
+
+        const ship = parseFloat(document.getElementById('shipping').value) || 0;
+        document.getElementById('liveGrandTotal').innerText = "₹" + (grand + ship).toFixed(2);
+    }
+
+    function calculateLiveTotal() {
+        renderItemList(); // Simply re-trigger the math
     }
 
     function showInvoice(doPrint) {
@@ -221,7 +232,7 @@
             let m = it.len > 0 && it.wid > 0 ? it.len * it.wid * it.qty : (it.len > 0 ? it.len * it.qty : it.qty);
             let total = m * it.rate;
             sub += total;
-            return `<tr><td>${i+1}</td><td class="desc-cell">${it.desc}</td><td>${it.qty}</td><td>${it.len||'-'}</td><td>${it.wid||'-'}</td><td>${m.toFixed(2)}</td><td>${it.rate}</td><td>${total.toFixed(2)}</td></tr>`;
+            return `<tr><td>${i+1}</td><td style="text-align:left;font-weight:bold;">${it.desc}</td><td>${it.qty}</td><td>${it.len||'-'}</td><td>${it.wid||'-'}</td><td>${m.toFixed(2)}</td><td>${it.rate}</td><td>${total.toFixed(2)}</td></tr>`;
         }).join('');
 
         const ship = parseFloat(document.getElementById('shipping').value) || 0;
@@ -232,88 +243,67 @@
         document.getElementById('invoice').style.display = 'block';
 
         if(doPrint) {
-            hasPrinted = true;
-            const currentNo = document.getElementById('docNo').value;
-            
-            const newHistoryItem = { 
-                no: currentNo, 
-                client: document.getElementById('client').value, 
-                total: (sub+ship).toFixed(2),
-                type: type,
-                date: document.getElementById('invDate').value,
-                items: JSON.parse(JSON.stringify(items)),
-                shipping: document.getElementById('shipping').value,
-                note: document.getElementById('note').value
-            };
-
-            const existingIndex = history.findIndex(h => h.no === currentNo && h.type === type);
-            if(existingIndex > -1) {
-                history[existingIndex] = newHistoryItem;
-            } else {
-                history.push(newHistoryItem);
-            }
-            
-            localStorage.setItem('inv_history', JSON.stringify(history));
-            renderHistory();
+            saveToHistory(type, sub + ship);
             setTimeout(() => window.print(), 300);
         }
     }
 
-    function renderHistory() {
-        const b = document.getElementById('historyBody');
-        let html = '';
-        for(let i = history.length - 1; i >= 0; i--) {
-            const h = history[i];
-            html += `
-                <tr class="history-row" onclick="loadHistory(${i})">
-                    <td><b>${h.type.toUpperCase()} #${h.no}</b></td>
-                    <td>${h.client || 'Guest'}</td>
-                    <td style="text-align:right">₹${h.total}</td>
-                    <td style="text-align:center; width:30px;">
-                        <button class="btn-del-history" onclick="deleteHistory(${i}, event)" title="Delete Record">🗑️</button>
-                    </td>
-                </tr>
-            `;
-        }
-        b.innerHTML = html;
-    }
-
-    function loadHistory(index) {
-        const h = history[index];
-        if(!h) return;
-
-        document.querySelector(`input[name="docType"][value="${h.type}"]`).checked = true;
-        document.getElementById('numLabel').innerText = h.type === 'invoice' ? "Invoice No." : "Estimate No.";
-        document.getElementById('docNo').value = h.no;
-        document.getElementById('client').value = h.client || '';
-        document.getElementById('invDate').value = h.date || new Date().toISOString().split('T')[0];
-        document.getElementById('shipping').value = h.shipping || 0;
-        document.getElementById('note').value = h.note || '';
-
-        items = h.items ? JSON.parse(JSON.stringify(h.items)) : [];
-        renderItemList();
-        
-        document.getElementById('invoice').style.display = 'none';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function deleteHistory(index, event) {
-        event.stopPropagation(); // Prevents loadHistory from triggering
-        if(!confirm("Are you sure you want to delete this record from history?")) return;
-        
-        history.splice(index, 1);
+    function saveToHistory(type, total) {
+        const entry = {
+            no: document.getElementById('docNo').value,
+            client: document.getElementById('client').value,
+            date: document.getElementById('invDate').value,
+            total: total.toFixed(2),
+            type: type,
+            items: JSON.parse(JSON.stringify(items)),
+            shipping: document.getElementById('shipping').value,
+            note: document.getElementById('note').value
+        };
+        // Avoid duplicates if re-printing same number
+        history = history.filter(h => !(h.no === entry.no && h.type === entry.type));
+        history.push(entry);
         localStorage.setItem('inv_history', JSON.stringify(history));
         renderHistory();
     }
 
+    function renderHistory() {
+        const b = document.getElementById('historyBody');
+        b.innerHTML = history.slice().reverse().map((h, i) => `
+            <tr class="history-row" onclick="loadHistory(${history.length - 1 - i})">
+                <td style="padding:10px; border-bottom:1px solid #eee;"><b>${h.type.toUpperCase()} #${h.no}</b><br><small>${h.date}</small></td>
+                <td style="padding:10px; border-bottom:1px solid #eee;">${h.client}</td>
+                <td style="padding:10px; border-bottom:1px solid #eee; text-align:right;">₹${h.total}</td>
+                <td style="padding:10px; border-bottom:1px solid #eee; text-align:right; color:red;" onclick="event.stopPropagation(); deleteRecord(${history.length - 1 - i})">🗑️</td>
+            </tr>
+        `).join('');
+    }
+
+    function loadHistory(idx) {
+        const h = history[idx];
+        document.getElementById('client').value = h.client;
+        document.getElementById('docNo').value = h.no;
+        document.getElementById('invDate').value = h.date;
+        document.getElementById('shipping').value = h.shipping;
+        document.getElementById('note').value = h.note;
+        items = JSON.parse(JSON.stringify(h.items));
+        renderItemList();
+    }
+
+    function deleteRecord(idx) {
+        if(confirm("Delete this record?")) {
+            history.splice(idx, 1);
+            localStorage.setItem('inv_history', JSON.stringify(history));
+            renderHistory();
+        }
+    }
+
     function resetForm() {
-        if(!confirm("Clear everything and start new?")) return;
-        if(hasPrinted) {
+        if(confirm("Start new bill?")) {
             const type = document.querySelector('input[name="docType"]:checked').value;
             const countKey = type === 'invoice' ? 'count_inv' : 'count_est';
             localStorage.setItem(countKey, parseInt(document.getElementById('docNo').value) + 1);
+            location.reload();
         }
-        location.reload();
     }
 </script>
 </body>
