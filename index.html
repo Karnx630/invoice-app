@@ -11,7 +11,7 @@
     <link rel="manifest" href="./manifest.json">
 
     <style>
-        :root { --primary: #1a73e8; --secondary: #003366; --danger: #dc3545; --success: #28a745; }
+        :root { --primary: #1a73e8; --secondary: #003366; --danger: #dc3545; --success: #28a745; --warning: #ffc107; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 15px; background: #f0f2f5; color: #333; }
         
         /* UI Panels */
@@ -26,6 +26,7 @@
         .btn-add { background: var(--success); color: white; width: 100%; }
         .btn-print { background: var(--primary); color: white; flex: 1; font-size: 16px; }
         .btn-clear { background: var(--danger); color: white; }
+        .btn-edit { background: var(--warning); color: #000; padding: 6px 12px; font-size: 12px; }
 
         /* Invoice Output (Hidden until Preview/Print) */
         #invoice { max-width: 800px; margin: 20px auto; background: white; padding: 40px; display: none; color: #000; border: 1px solid #eee; }
@@ -46,6 +47,11 @@
         .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .history-table th { text-align: left; padding: 10px; border-bottom: 2px solid #eee; }
         .history-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .history-row { cursor: pointer; transition: background 0.2s; }
+        .history-row:hover { background: #f8fbff; }
+        
+        .btn-del-history { background: transparent; border: none; font-size: 16px; cursor: pointer; padding: 5px; border-radius: 4px; transition: 0.2s; }
+        .btn-del-history:hover { background: #fee; }
 
         @media print {
             body { background: white; padding: 0; }
@@ -96,7 +102,7 @@
 </div>
 
 <div class="history-panel">
-    <label style="margin-bottom: 10px; display:block;">Recent History</label>
+    <label style="margin-bottom: 10px; display:block;">Recent History (Click to load)</label>
     <table class="history-table">
         <tbody id="historyBody"></tbody>
     </table>
@@ -157,6 +163,7 @@
     function addItem() {
         const desc = document.getElementById('t-desc').value;
         if(!desc) return;
+        
         items.push({
             desc,
             qty: parseFloat(document.getElementById('t-qty').value) || 1,
@@ -164,16 +171,40 @@
             wid: parseFloat(document.getElementById('t-wid').value) || 0,
             rate: parseFloat(document.getElementById('t-rate').value) || 0
         });
+        
         document.getElementById('t-desc').value = '';
+        document.getElementById('t-qty').value = '1';
+        document.getElementById('t-len').value = '';
+        document.getElementById('t-wid').value = '';
+        document.getElementById('t-rate').value = '';
+        
+        renderItemList();
+    }
+
+    function editItem(i) {
+        const it = items[i];
+        document.getElementById('t-desc').value = it.desc;
+        document.getElementById('t-qty').value = it.qty;
+        document.getElementById('t-len').value = it.len || '';
+        document.getElementById('t-wid').value = it.wid || '';
+        document.getElementById('t-rate').value = it.rate || '';
+        
+        items.splice(i, 1);
         renderItemList();
     }
 
     function renderItemList() {
         const div = document.getElementById('itemListUI');
         div.innerHTML = items.map((it, i) => `
-            <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee; font-size:14px;">
-                <span><b>${it.desc}</b> (${it.qty} x ₹${it.rate})</span>
-                <span style="color:red; cursor:pointer; font-weight:bold;" onclick="items.splice(${i},1);renderItemList()">✕</span>
+            <div style="display:flex; justify-content:space-between; align-items: center; padding:10px; border-bottom:1px solid #ddd; font-size:14px; background:#fff; margin-bottom:4px; border-radius:4px;">
+                <div style="flex:1;">
+                    <b>${it.desc}</b><br>
+                    <span style="font-size: 12px; color: #555;">Qty: ${it.qty} | Len: ${it.len||'-'} | Wid: ${it.wid||'-'} | Rate: ₹${it.rate}</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-edit" onclick="editItem(${i})">Edit</button>
+                    <span style="color:red; cursor:pointer; font-weight:bold; font-size:16px; padding: 4px;" onclick="items.splice(${i},1);renderItemList()">✕</span>
+                </div>
             </div>
         `).join('');
     }
@@ -202,13 +233,26 @@
 
         if(doPrint) {
             hasPrinted = true;
-            // Save to local archive
-            history.push({ 
-                no: document.getElementById('docNo').value, 
+            const currentNo = document.getElementById('docNo').value;
+            
+            const newHistoryItem = { 
+                no: currentNo, 
                 client: document.getElementById('client').value, 
                 total: (sub+ship).toFixed(2),
-                type: type 
-            });
+                type: type,
+                date: document.getElementById('invDate').value,
+                items: JSON.parse(JSON.stringify(items)),
+                shipping: document.getElementById('shipping').value,
+                note: document.getElementById('note').value
+            };
+
+            const existingIndex = history.findIndex(h => h.no === currentNo && h.type === type);
+            if(existingIndex > -1) {
+                history[existingIndex] = newHistoryItem;
+            } else {
+                history.push(newHistoryItem);
+            }
+            
             localStorage.setItem('inv_history', JSON.stringify(history));
             renderHistory();
             setTimeout(() => window.print(), 300);
@@ -217,13 +261,49 @@
 
     function renderHistory() {
         const b = document.getElementById('historyBody');
-        b.innerHTML = history.slice().reverse().map((h, i) => `
-            <tr>
-                <td><b>${h.type.toUpperCase()} #${h.no}</b></td>
-                <td>${h.client}</td>
-                <td style="text-align:right">₹${h.total}</td>
-            </tr>
-        `).join('');
+        let html = '';
+        for(let i = history.length - 1; i >= 0; i--) {
+            const h = history[i];
+            html += `
+                <tr class="history-row" onclick="loadHistory(${i})">
+                    <td><b>${h.type.toUpperCase()} #${h.no}</b></td>
+                    <td>${h.client || 'Guest'}</td>
+                    <td style="text-align:right">₹${h.total}</td>
+                    <td style="text-align:center; width:30px;">
+                        <button class="btn-del-history" onclick="deleteHistory(${i}, event)" title="Delete Record">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        }
+        b.innerHTML = html;
+    }
+
+    function loadHistory(index) {
+        const h = history[index];
+        if(!h) return;
+
+        document.querySelector(`input[name="docType"][value="${h.type}"]`).checked = true;
+        document.getElementById('numLabel').innerText = h.type === 'invoice' ? "Invoice No." : "Estimate No.";
+        document.getElementById('docNo').value = h.no;
+        document.getElementById('client').value = h.client || '';
+        document.getElementById('invDate').value = h.date || new Date().toISOString().split('T')[0];
+        document.getElementById('shipping').value = h.shipping || 0;
+        document.getElementById('note').value = h.note || '';
+
+        items = h.items ? JSON.parse(JSON.stringify(h.items)) : [];
+        renderItemList();
+        
+        document.getElementById('invoice').style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteHistory(index, event) {
+        event.stopPropagation(); // Prevents loadHistory from triggering
+        if(!confirm("Are you sure you want to delete this record from history?")) return;
+        
+        history.splice(index, 1);
+        localStorage.setItem('inv_history', JSON.stringify(history));
+        renderHistory();
     }
 
     function resetForm() {
