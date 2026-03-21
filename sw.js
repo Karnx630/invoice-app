@@ -1,35 +1,44 @@
-const CACHE_NAME = 'invoicer-pro-v1';
+const CACHE_NAME = 'invoicer-pro-v2';
 const ASSETS = [
   './',
-  './index.html', // Make sure your main file is named index.html
-  'https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap'
+  './index.html',
+  './manifest.json'
 ];
 
-// Install Service Worker and cache files
+// Install Event
 self.addEventListener('install', (event) => {
+  console.log('[Service Worker] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] Caching all assets');
       return cache.addAll(ASSETS);
     })
   );
 });
 
-// Activate and clean up old caches
+// Activate Event (clears old caches)
 self.addEventListener('activate', (event) => {
+  console.log('[Service Worker] Activating...');
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('[Service Worker] Removing old cache', key);
+            return caches.delete(key);
+          }
+        })
       );
     })
   );
 });
 
-// Fetch assets from cache when offline
+// Fetch Event (Network first, then fallback to Cache)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
+    fetch(event.request).catch(() => {
+      console.log('[Service Worker] Network failed, pulling from cache for:', event.request.url);
+      return caches.match(event.request);
     })
   );
 });
