@@ -1,44 +1,47 @@
-const CACHE_NAME = 'invoicer-pro-v2';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-];
+const CACHE_NAME = 'invoicer-pro-v3';
 
-// Install Event
+// Install phase: force the new service worker to take over immediately
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching all assets');
-      return cache.addAll(ASSETS);
-    })
-  );
+    self.skipWaiting();
 });
 
-// Activate Event (clears old caches)
+// Activate phase: clean up any old, broken caches from previous versions
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[Service Worker] Removing old cache', key);
-            return caches.delete(key);
-          }
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cache) => {
+                    if (cache !== CACHE_NAME) {
+                        return caches.delete(cache);
+                    }
+                })
+            );
         })
-      );
-    })
-  );
+    );
+    // Take control of all open pages right away
+    return self.clients.claim();
 });
 
-// Fetch Event (Network first, then fallback to Cache)
+// Fetch phase: "Network First, Fallback to Cache"
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      console.log('[Service Worker] Network failed, pulling from cache for:', event.request.url);
-      return caches.match(event.request);
-    })
-  );
+    // Ignore non-GET requests (like form submissions)
+    if (event.request.method !== 'GET') return;
+
+    event.respondWith(
+        fetch(event.request)
+            .then((networkResponse) => {
+                // If we get a valid response from the internet, save a copy to the cache
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return networkResponse;
+            })
+            .catch(() => {
+                // IF OFFLINE: Catch the error and serve the file from the cache
+                return caches.match(event.request);
+            })
+    );
 });
