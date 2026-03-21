@@ -139,10 +139,13 @@
         </thead>
         <tbody id="outBody"></tbody>
     </table>
+    
     <div class="summary-wrapper">
         <div class="summary-box"><div class="summary-label">Subtotal</div><div class="summary-val" id="outSub"></div></div>
+        <div class="summary-box" id="outShipBox" style="display: none;"><div class="summary-label">Shipping/Other</div><div class="summary-val" id="outShipVal"></div></div>
         <div class="summary-box" style="background: #eee;"><div class="summary-label">GRAND TOTAL</div><div class="summary-val" id="outGrand"></div></div>
     </div>
+    
     <div id="outNote" style="margin-top:30px; font-style: italic;"></div>
 </div>
 
@@ -175,7 +178,6 @@
             rate: parseFloat(document.getElementById('t-rate').value) || 0
         });
 
-        // Clear top inputs
         document.getElementById('t-desc').value = '';
         document.getElementById('t-qty').value = '1';
         document.getElementById('t-len').value = '';
@@ -187,7 +189,7 @@
 
     function updateItem(index, field, value) {
         items[index][field] = field === 'desc' ? value : parseFloat(value) || 0;
-        renderItemList(); // Re-render to update row totals and grand total
+        renderItemList();
     }
 
     function renderItemList() {
@@ -217,7 +219,7 @@
     }
 
     function calculateLiveTotal() {
-        renderItemList(); // Simply re-trigger the math
+        renderItemList(); 
     }
 
     function showInvoice(doPrint) {
@@ -235,8 +237,18 @@
             return `<tr><td>${i+1}</td><td style="text-align:left;font-weight:bold;">${it.desc}</td><td>${it.qty}</td><td>${it.len||'-'}</td><td>${it.wid||'-'}</td><td>${m.toFixed(2)}</td><td>${it.rate}</td><td>${total.toFixed(2)}</td></tr>`;
         }).join('');
 
+        // Updated Shipping Logic
         const ship = parseFloat(document.getElementById('shipping').value) || 0;
         document.getElementById('outSub').innerText = "₹" + sub.toFixed(2);
+        
+        const shipBox = document.getElementById('outShipBox');
+        if (ship > 0) {
+            shipBox.style.display = 'flex';
+            document.getElementById('outShipVal').innerText = "₹" + ship.toFixed(2);
+        } else {
+            shipBox.style.display = 'none';
+        }
+
         document.getElementById('outGrand').innerText = "₹" + (sub + ship).toFixed(2);
         document.getElementById('outNote').innerText = document.getElementById('note').value ? "Note: " + document.getElementById('note').value : "";
         
@@ -259,7 +271,6 @@
             shipping: document.getElementById('shipping').value,
             note: document.getElementById('note').value
         };
-        // Avoid duplicates if re-printing same number
         history = history.filter(h => !(h.no === entry.no && h.type === entry.type));
         history.push(entry);
         localStorage.setItem('inv_history', JSON.stringify(history));
@@ -306,5 +317,16 @@
         }
     }
 </script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker Registered!', reg))
+                .catch(err => console.error('Service Worker Registration Failed:', err));
+        });
+    }
+</script>
+
 </body>
 </html>
