@@ -192,7 +192,7 @@
         renderItemList();
     }
 
-    function renderItemList() {
+        function renderItemList() {
         const tbody = document.getElementById('editableBody');
         let grand = 0;
 
@@ -201,13 +201,14 @@
             let rowTotal = measure * it.rate;
             grand += rowTotal;
 
+            // FIX: Changed 'oninput' to 'onchange' on all the input fields below
             return `
                 <tr>
-                    <td><input type="text" value="${it.desc}" oninput="updateItem(${i}, 'desc', this.value)"></td>
-                    <td><input type="number" value="${it.qty}" oninput="updateItem(${i}, 'qty', this.value)"></td>
-                    <td><input type="number" value="${it.len}" oninput="updateItem(${i}, 'len', this.value)"></td>
-                    <td><input type="number" value="${it.wid}" oninput="updateItem(${i}, 'wid', this.value)"></td>
-                    <td><input type="number" value="${it.rate}" oninput="updateItem(${i}, 'rate', this.value)"></td>
+                    <td><input type="text" value="${it.desc}" onchange="updateItem(${i}, 'desc', this.value)"></td>
+                    <td><input type="number" value="${it.qty}" onchange="updateItem(${i}, 'qty', this.value)"></td>
+                    <td><input type="number" value="${it.len}" onchange="updateItem(${i}, 'len', this.value)"></td>
+                    <td><input type="number" value="${it.wid}" onchange="updateItem(${i}, 'wid', this.value)"></td>
+                    <td><input type="number" value="${it.rate}" onchange="updateItem(${i}, 'rate', this.value)"></td>
                     <td class="row-total">₹${rowTotal.toFixed(2)}</td>
                     <td><span style="color:red; cursor:pointer;" onclick="items.splice(${i},1);renderItemList()">✕</span></td>
                 </tr>
@@ -217,6 +218,7 @@
         const ship = parseFloat(document.getElementById('shipping').value) || 0;
         document.getElementById('liveGrandTotal').innerText = "₹" + (grand + ship).toFixed(2);
     }
+
 
     function calculateLiveTotal() {
         renderItemList(); 
